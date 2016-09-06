@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   visp_bridge
   cv_bridge
+  message_generation
 )
 
 find_package(OpenCV 2.4.8 REQUIRED)
@@ -17,11 +18,22 @@ find_package(OpenCV 2.4.8 REQUIRED)
 ###################################
 ## catkin specific configuration ##
 ###################################
-catkin_package(
-    CATKIN_DEPENDS
-)
 
 include_directories(include ${catkin_INCLUDE_DIRS})
+
+add_message_files(
+  DIRECTORY msg
+  FILES TrackerData.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
+
+catkin_package(
+    CATKIN_DEPENDS message_runtime
+)
 
 #############
 ## Install ##

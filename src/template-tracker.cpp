@@ -12,6 +12,8 @@
 
 #include "detector/landing_mark_detection.h"
 
+#include "kuri_mbzirc_challenge_1/TrackerData.h"
+
 vpImage<unsigned char> I;
 vpDisplayX * display;
 
@@ -23,45 +25,19 @@ bool initialized = false;
 // detector
 DetectLandingMark detector;
 
-// Used for testing with certain bag files and hardcoding detections, use -1 to disable hardcoded
-#define BAG_FILE -1
-#if BAG_FILE==0 // mbztestfl1_2016-06-02-16-38-52.bag
-const int FRAME_NO = 5844;
-vpTemplateTrackerTriangle t1(vpImagePoint(346, 387), vpImagePoint(432, 369), vpImagePoint(454, 484));
-vpTemplateTrackerTriangle t2(vpImagePoint(454, 484), vpImagePoint(369, 499), vpImagePoint(346, 387));
-#elif BAG_FILE==1 // Ch1_exp1_descend_640.bag
-const int FRAME_NO = 527;
-vpTemplateTrackerTriangle t1(vpImagePoint(106, 260), vpImagePoint(144, 257), vpImagePoint(144, 307));
-vpTemplateTrackerTriangle t2(vpImagePoint(144, 307), vpImagePoint(108, 310), vpImagePoint(106, 260));
-#else
-#undef BAG_FILE
-#endif
+ros::Publisher trackerDataPub;
 
 void imageCallback(const sensor_msgs::Image::ConstPtr& msg)
 {
   ROS_INFO("Image Recevied, %d %d %d", msg->header.seq, msg->width, msg->height);
   I  = visp_bridge::toVispImage(*msg);
 
-  // hardcoded detection
-#ifdef BAG_FILE
-  if(msg->header.seq == FRAME_NO && !initialized)
-  {
-    ROS_INFO("Reached hardcoded frame sequence ID");
-    vpTemplateTrackerZone tz;
-    tz.add(t1);
-    tz.add(t2);
-    tracker->initFromZone(I, tz);
-    initialized = true;
-  }
-#endif  
-  
   vpDisplay::display(I);
   
 
   if(!initialized)
   {
     // if we're not tracking, do detection
-
     bool detected = detector.detect(msg);
 
     if(detected){
@@ -88,12 +64,26 @@ void imageCallback(const sensor_msgs::Image::ConstPtr& msg)
   {
     try{
       tracker->track(I);
-      
+
+      // get tracker information
       vpColVector p = tracker->getp();
       vpHomography H = warp->getHomography(p);
       std::cout << "Homography: \n" << H << std::endl;
+	  vpTemplateTrackerZone zone_ref = tracker->getZoneRef();
+	  vpTemplateTrackerZone zone_warped;
+	  warp->warpZone(zone_ref, p, zone_warped);
       
+	  // Display the information
       tracker->display(I, vpColor::red);
+      
+      // create a message with tracker data and publish it
+      kuri_mbzirc_challenge_1::TrackerData data;
+	  data.minX = zone_warped.getMinx();
+	  data.minY = zone_warped.getMiny();
+	  data.maxX = zone_warped.getMaxx();
+	  data.maxY = zone_warped.getMaxy();
+	  trackerDataPub.publish(data);
+	  
     }catch(vpTrackingException e)
     {
       ROS_INFO("An exception occurred.. cancelling tracking.");
@@ -113,6 +103,9 @@ int main(int argc, char ** argv)
   I.init(720, 1280);
   
   ros::Subscriber sub = n.subscribe("image_raw", 100, imageCallback);
+  
+  trackerDataPub = n.advertise<kuri_mbzirc_challenge_1::TrackerData>("visptracker_data", 1000);
+  
   
   display = new vpDisplayX(I, 0, 0, "Image");
   vpDisplay::display(I);
