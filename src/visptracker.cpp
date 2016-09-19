@@ -33,7 +33,6 @@ void imageCallback(const sensor_msgs::Image::ConstPtr& msg)
   I  = visp_bridge::toVispImage(*msg);
 
   vpDisplay::display(I);
-  
 
   if(!initialized)
   {
@@ -100,10 +99,9 @@ int main(int argc, char ** argv)
   ros::init(argc, argv, "visptracker");
   ros::NodeHandle n;
   
-  I.init(720, 1280);
+  I.init(480, 640);
   
-  ros::Subscriber sub = n.subscribe("image_raw", 100, imageCallback);
-  
+  ros::Subscriber sub = n.subscribe("/ardrone/downward_cam/camera/image", 100, imageCallback);
   trackerDataPub = n.advertise<kuri_mbzirc_challenge_1::TrackerData>("visptracker_data", 1000);
   
   

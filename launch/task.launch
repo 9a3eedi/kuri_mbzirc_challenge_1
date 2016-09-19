@@ -41,6 +41,7 @@
 
   <group if="$(arg goto)" >
     <node pkg="kuri_mbzirc_challenge_1" type="goto_centre.py" name="goto_centre" />
+	<node pkg="kuri_mbzirc_challenge_1" type="visp-tracker" name="visptracker" />
   </group>
 
   <group unless="$(arg headless)" >
