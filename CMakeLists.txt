@@ -44,7 +44,7 @@ install(DIRECTORY launch urdf config
 
 
 # Had to use another name to distinguish from the "test_visp" repository
-add_executable(visp-tracker src/template-tracker.cpp src/detector/landing_mark_detection.cpp)
+add_executable(visp-tracker src/visptracker.cpp src/detector/landing_mark_detection.cpp)
 target_link_libraries(visp-tracker ${catkin_LIBRARIES})
 target_link_libraries(visp-tracker ${OpenCV_LIBRARIES})
   

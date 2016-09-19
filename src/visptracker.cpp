@@ -97,7 +97,7 @@ void imageCallback(const sensor_msgs::Image::ConstPtr& msg)
 
 int main(int argc, char ** argv)
 {
-  ros::init(argc, argv, "templatetracker");
+  ros::init(argc, argv, "visptracker");
   ros::NodeHandle n;
   
   I.init(720, 1280);
