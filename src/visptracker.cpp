@@ -6,7 +6,13 @@
 #include <visp/vpImageIo.h>
 #include <visp/vpDisplayX.h>
 #include <visp/vpMeLine.h>
+#include <visp/vpTemplateTracker.h>
+#include <visp/vpTemplateTrackerSSDESM.h>
+#include <visp/vpTemplateTrackerSSDForwardAdditional.h>
+#include <visp/vpTemplateTrackerSSDForwardCompositional.h>
 #include <visp/vpTemplateTrackerSSDInverseCompositional.h>
+#include <visp/vpTemplateTrackerZNCCForwardAdditional.h>
+#include <visp/vpTemplateTrackerZNCCInverseCompositional.h>
 #include <visp/vpTemplateTrackerWarpHomography.h>
 #include <visp/vpTrackingException.h>
 
@@ -17,9 +23,15 @@
 vpImage<unsigned char> I;
 vpDisplayX * display;
 
+// Set 0 for SSDESM, 1 for SSDForwardAdditional,
+// 2 for SSDForwardCompositionall, 3 for SSDInverseCompositional 
+// 4 for ZNCCForwardAdditional, 5 for ZNCCInverseCompositional
+#define TRACKER_TYPE 5
+
 // template tracker variables
+
 vpTemplateTrackerWarpHomography * warp;
-vpTemplateTrackerSSDInverseCompositional * tracker;
+vpTemplateTracker * tracker;
 bool initialized = false;
 
 // detector
@@ -110,7 +122,21 @@ int main(int argc, char ** argv)
   vpDisplay::flush(I);
 
   warp = new vpTemplateTrackerWarpHomography();
+#if TRACKER_TYPE==0
+  tracker = new vpTemplateTrackerSSDESM(warp);
+#elif TRACKER_TYPE==1
+  tracker = new vpTemplateTrackerSSDForwardAdditional(warp);
+#elif TRACKER_TYPE==2
+  tracker = new vpTemplateTrackerSSDForwardCompositional(warp);
+#elif TRACKER_TYPE==3
   tracker = new vpTemplateTrackerSSDInverseCompositional(warp);
+#elif TRACKER_TYPE==4
+  tracker = new vpTemplateTrackerZNCCForwardAdditional(warp);
+#elif TRACKER_TYPE==5
+  tracker = new vpTemplateTrackerZNCCInverseCompositional(warp);
+#else
+#error "Tracker type not defined properly"
+#endif
   tracker->setSampling(2, 2);
   tracker->setLambda(0.001);
   tracker->setIterationMax(200);
