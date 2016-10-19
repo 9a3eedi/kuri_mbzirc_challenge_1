@@ -23,13 +23,8 @@
 vpImage<unsigned char> I;
 vpDisplayX * display;
 
-// Set 0 for SSDESM, 1 for SSDForwardAdditional,
-// 2 for SSDForwardCompositionall, 3 for SSDInverseCompositional 
-// 4 for ZNCCForwardAdditional, 5 for ZNCCInverseCompositional
-#define TRACKER_TYPE 5
 
 // template tracker variables
-
 vpTemplateTrackerWarpHomography * warp;
 vpTemplateTracker * tracker;
 bool initialized = false;
@@ -106,15 +101,59 @@ void imageCallback(const sensor_msgs::Image::ConstPtr& msg)
   vpDisplay::flush(I);
 }
 
+// Reads params, or sets default parameters if parameters are not found
+void readParams(int& camSizeX, int& camSizeY, int& trackerType, std::string& camTopic, std::string& pubTopic)
+{
+  if(!(ros::param::get("/visptracker/cam_resolution_x", camSizeX) && 
+	 ros::param::get("/visptracker/cam_resolution_y", camSizeY)))
+  {
+	ROS_WARN("Cannot find camera resolution params cam_resolution_x or cam_resolution_y");
+	camSizeX = 1920;
+	camSizeY = 1080;
+  }
+  ROS_INFO("Set camera resolution to %d %d", camSizeX, camSizeY);
+  
+  if(ros::param::get("/visptracker/tracker_type", trackerType) && (trackerType < 0 || trackerType > 5))
+  {
+	ROS_WARN("Cannot read valid tracker type parameter");
+	trackerType = 1;
+  }
+  ROS_INFO("Set tracker type to %d", trackerType);
+
+  
+  if(!ros::param::get("/visptracker/cam_topic", camTopic))
+  {
+	ROS_WARN("Cannot get cam_topic string parameter");
+	camTopic = "/ardrone/downward_cam/camera/image";
+  }
+  ROS_INFO("Set camera topic to %s", camTopic.c_str());
+
+  
+  if(!ros::param::get("/visptracker/pub_topic", pubTopic))
+  {
+	ROS_WARN("Cannot get publisher topic string parameter");
+	pubTopic = "visptracker_data";
+  }
+  ROS_INFO("Set publisher topic name as %s", pubTopic.c_str());
+}
+
 int main(int argc, char ** argv)
 {
   ros::init(argc, argv, "visptracker");
   ros::NodeHandle n;
+
   
-  I.init(480, 640);
+  // read parameters first
+  int camSizeX, camSizeY, trackerType;
+  std::string camTopic, pubTopic;
+  ROS_INFO("Reading parameters...");
+  readParams(camSizeX, camSizeY, trackerType, camTopic, pubTopic);
+  ROS_INFO("Parameters loaded successfully!");
   
-  ros::Subscriber sub = n.subscribe("/ardrone/downward_cam/camera/image", 100, imageCallback);
-  trackerDataPub = n.advertise<kuri_mbzirc_challenge_1::TrackerData>("visptracker_data", 1000);
+  I.init(camSizeY, camSizeX);
+  
+  ros::Subscriber sub = n.subscribe(camTopic, 100, imageCallback);
+  trackerDataPub = n.advertise<kuri_mbzirc_challenge_1::TrackerData>(pubTopic, 1000);
   
   
   display = new vpDisplayX(I, 0, 0, "Image");
@@ -122,21 +161,30 @@ int main(int argc, char ** argv)
   vpDisplay::flush(I);
 
   warp = new vpTemplateTrackerWarpHomography();
-#if TRACKER_TYPE==0
-  tracker = new vpTemplateTrackerSSDESM(warp);
-#elif TRACKER_TYPE==1
-  tracker = new vpTemplateTrackerSSDForwardAdditional(warp);
-#elif TRACKER_TYPE==2
-  tracker = new vpTemplateTrackerSSDForwardCompositional(warp);
-#elif TRACKER_TYPE==3
-  tracker = new vpTemplateTrackerSSDInverseCompositional(warp);
-#elif TRACKER_TYPE==4
-  tracker = new vpTemplateTrackerZNCCForwardAdditional(warp);
-#elif TRACKER_TYPE==5
-  tracker = new vpTemplateTrackerZNCCInverseCompositional(warp);
-#else
-#error "Tracker type not defined properly"
-#endif
+  switch(trackerType){
+	case 0:
+	  tracker = new vpTemplateTrackerSSDESM(warp);
+	  break;
+	case 1:
+	  tracker = new vpTemplateTrackerSSDForwardAdditional(warp);
+	  break;
+	case 2:
+	  tracker = new vpTemplateTrackerSSDForwardCompositional(warp);
+	  break;
+	case 3:
+	  tracker = new vpTemplateTrackerSSDInverseCompositional(warp);
+	  break;
+	case 4:
+	  tracker = new vpTemplateTrackerZNCCForwardAdditional(warp);
+	  break;
+	case 5:
+	  tracker = new vpTemplateTrackerZNCCInverseCompositional(warp);
+	  break;
+	default:
+	  ROS_ERROR("Invalid trackerType value %d (this should never happen..", trackerType);
+	  return -1;
+  }
+
   tracker->setSampling(2, 2);
   tracker->setLambda(0.001);
   tracker->setIterationMax(200);
