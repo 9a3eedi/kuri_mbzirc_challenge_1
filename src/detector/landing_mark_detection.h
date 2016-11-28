@@ -1,3 +1,6 @@
+#ifndef LANDING_MARK_DETECTION_H
+#define LANDING_MARK_DETECTION_H
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include "opencv2/opencv.hpp"
@@ -34,3 +37,5 @@ class DetectLandingMark {
 	private:
 		landing_mark a;
 };
+
+#endif

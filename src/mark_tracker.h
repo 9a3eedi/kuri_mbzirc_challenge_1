@@ -1,10 +1,11 @@
+#ifndef MARK_TRACKER_H
+#define MARK_TRACKER_H
+
 #include <visp/vpTemplateTracker.h>
 #include <visp/vpTemplateTrackerWarpHomography.h>
 #include "detector/landing_mark_detection.h"
 #include "kuri_mbzirc_challenge_1/TrackerData.h"
 #include "visp_bridge/image.h"
-
-
 
 enum TrackerType {
   SSDESM,
@@ -53,3 +54,5 @@ private:
   bool displayEnabled; // true if we want to display the results of the detector/tracker
   vpImage<unsigned char> I;
 };
+
+#endif
