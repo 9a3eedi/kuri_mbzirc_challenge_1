@@ -20,11 +20,13 @@ TrackLandingMark::~TrackLandingMark()
 	delete(tracker);
   if(warp != NULL);
 	delete(warp);
+  if(display != NULL)
+	delete(display);
 }
 
 /**
- * Use this constructor to set up this class, with default tracker parameters
- */
+* Use this constructor to set up this class, with default tracker parameters
+*/
 TrackLandingMark::TrackLandingMark(int x, int y, TrackerType type)
 {
   warp = new vpTemplateTrackerWarpHomography();
@@ -57,12 +59,19 @@ TrackLandingMark::TrackLandingMark(int x, int y, TrackerType type)
   setIterationMax(200);
   setPyramidal(4, 1);
   
-  I.init(x, y);
+  I.init(y, x);
+  
+  display = new vpDisplayX(I, 0, 0, "Detector and Tracker output");
+  
+  detectedState = false;
+  trackingState = false;
+  displayEnabled = false;
 }
 
-bool TrackLandingMark::detectAndTrack(sensor_msgs::Image::ConstPtr& msg)
+bool TrackLandingMark::detectAndTrack(const sensor_msgs::Image::ConstPtr& msg)
 {
   if(displayEnabled){
+	I = visp_bridge::toVispImage(*msg);
 	vpDisplay::display(I);
   }
   
@@ -92,36 +101,38 @@ bool TrackLandingMark::detectAndTrack(sensor_msgs::Image::ConstPtr& msg)
   
   if(trackingState)
   {
-	I = visp_bridge::toVispImage(*msg);
 	try{
-      tracker->track(I);
+	  tracker->track(I);
 
-      // get tracker information
-      vpColVector p = tracker->getp();
-      vpHomography H = warp->getHomography(p);
-      std::cout << "Homography: \n" << H << std::endl;
+	  // get tracker information
+	  vpColVector p = tracker->getp();
+	  vpHomography H = warp->getHomography(p);
+	  std::cout << "Homography: \n" << H << std::endl;
 	  vpTemplateTrackerZone zone_ref = tracker->getZoneRef();
 	  vpTemplateTrackerZone zone_warped;
 	  warp->warpZone(zone_ref, p, zone_warped);
-      
+	  
 	  // Display the information if needed
 	  if(displayEnabled){
 		tracker->display(I, vpColor::red);
 	  }
 	  
-      // create a message with tracker data and publish it
+	  // create a message with tracker data and publish it
 	  trackerData.minX = zone_warped.getMinx();
 	  trackerData.minY = zone_warped.getMiny();
 	  trackerData.maxX = zone_warped.getMaxx();
 	  trackerData.maxY = zone_warped.getMaxy();	  
-    }catch(vpTrackingException e)
-    {
-      ROS_INFO("An exception occurred.. cancelling tracking.");
-      tracker->resetTracker();
-      trackingState = false;
+	}catch(vpTrackingException e)
+	{
+	  ROS_INFO("An exception occurred.. cancelling tracking.");
+	  tracker->resetTracker();
+	  trackingState = false;
 	  detectedState = false;
-    }
+	}
   }
+  
+  if(displayEnabled)
+	vpDisplay::flush(I);
   
 
 }

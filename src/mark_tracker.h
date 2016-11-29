@@ -1,6 +1,7 @@
 #ifndef MARK_TRACKER_H
 #define MARK_TRACKER_H
 
+#include <visp/vpDisplayX.h>
 #include <visp/vpTemplateTracker.h>
 #include <visp/vpTemplateTrackerWarpHomography.h>
 #include "detector/landing_mark_detection.h"
@@ -26,7 +27,7 @@ public:
   TrackLandingMark(int x, int y, TrackerType type);
 
   // returns true if detected and tracking, false if not detected
-  bool detectAndTrack(sensor_msgs::Image::ConstPtr& msg);
+  bool detectAndTrack(const sensor_msgs::Image::ConstPtr& msg);
   void reset();
   
   // get methods
@@ -53,6 +54,7 @@ private:
   bool trackingState; // true if we're tracking
   bool displayEnabled; // true if we want to display the results of the detector/tracker
   vpImage<unsigned char> I;
+  vpDisplayX * display;
 };
 
 #endif
