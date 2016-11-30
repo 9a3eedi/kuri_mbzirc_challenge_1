@@ -29,6 +29,8 @@ void imageCallback(const sensor_msgs::Image::ConstPtr& msg)
 {
   ROS_INFO("Image Recevied, %d %d %d", msg->header.seq, msg->width, msg->height);
   detectorTracker->detectAndTrack(msg);
+  kuri_mbzirc_challenge_1::TrackerData data = detectorTracker->getTrackerData();
+  trackerDataPub.publish(data);
 }
 
 // Reads params, or sets default parameters if parameters are not found

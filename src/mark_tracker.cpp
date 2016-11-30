@@ -66,6 +66,12 @@ TrackLandingMark::TrackLandingMark(int x, int y, TrackerType type)
   detectedState = false;
   trackingState = false;
   displayEnabled = false;
+  
+  trackerData.minX = 0;
+  trackerData.minY = 0;
+  trackerData.maxX = 0;
+  trackerData.maxY = 0;
+  trackerData.confidence = 0.0;
 }
 
 bool TrackLandingMark::detectAndTrack(const sensor_msgs::Image::ConstPtr& msg)
@@ -121,7 +127,8 @@ bool TrackLandingMark::detectAndTrack(const sensor_msgs::Image::ConstPtr& msg)
 	  trackerData.minX = zone_warped.getMinx();
 	  trackerData.minY = zone_warped.getMiny();
 	  trackerData.maxX = zone_warped.getMaxx();
-	  trackerData.maxY = zone_warped.getMaxy();	  
+	  trackerData.maxY = zone_warped.getMaxy();
+	  trackerData.confidence = 1.0f;
 	}catch(vpTrackingException e)
 	{
 	  ROS_INFO("An exception occurred.. cancelling tracking.");
@@ -129,12 +136,12 @@ bool TrackLandingMark::detectAndTrack(const sensor_msgs::Image::ConstPtr& msg)
 	  trackingState = false;
 	  detectedState = false;
 	}
+  }else{
+	trackerData.confidence /= 2.0f; // half the confidence level every step we don't track
   }
   
   if(displayEnabled)
 	vpDisplay::flush(I);
-  
-
 }
 
 // get methods
