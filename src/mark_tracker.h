@@ -8,7 +8,8 @@
 #include "kuri_mbzirc_challenge_1/TrackerData.h"
 #include "visp_bridge/image.h"
 
-enum TrackerType {
+enum TrackerType 
+{
   SSDESM,
   SSDForwardAdditional,
   SSDForwardCompositional,
@@ -17,8 +18,8 @@ enum TrackerType {
   ZNCCInverseCompositional,
 };
 
-class TrackLandingMark{
-  
+class TrackLandingMark
+{
 public:
   TrackLandingMark();
   TrackLandingMark(TrackLandingMark& copy);
